@@ -3,7 +3,7 @@
 # A simple script for qqplots using ggplot2
 # contact: qcorbin@hsph.harvard.edu
 
-qq <- function(pvals, facet = NULL, colour = NULL, group = NULL, nrow=NULL, thin_qt = 0.01, n_pts = 5000, ribbon = TRUE, confidence_level = 0.05, point.alpha = 1, point.size = 0.7, ribbon.alpha = 0.25, abline.colour = 'red', legend.title = NULL, theme.objects = NULL ){
+qq <- function(pvals, facet = NULL, colour = NULL, group = NULL, nrow=NULL, thin_qt = 0.01, n_pts = 5000, ribbon = TRUE, confidence_level = 0.05, point.alpha = 1, point.size = 0.7, ribbon.alpha = 0.25, abline.colour = 'red', legend.title = NULL, theme.objects = NULL, print_plot = TRUE ){
 
 	# REQUIRED ARGUMENTS
 	# pvals = length(N) vector of p-values (or -log10(p-values))
@@ -26,6 +26,7 @@ qq <- function(pvals, facet = NULL, colour = NULL, group = NULL, nrow=NULL, thin
 	# abline.colour = colour of null diagonal line
 	# legend.title = title of legend (used only when `colour` != NULL)
 	# theme.objects = extra ggplot theme objects, e.g., theme_minimal()
+	# print_plot = show plot when function is called?
 	
 
 	require(data.table)
@@ -76,5 +77,8 @@ qq <- function(pvals, facet = NULL, colour = NULL, group = NULL, nrow=NULL, thin
 	
 	if( !is.null(theme.objects) ) pl <- pl %+% theme.objects
 	
+	if( print_plot ) print(pl)
+	
 	invisible(list('plot' = pl, 'data' = dt))
 }
+
