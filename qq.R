@@ -68,9 +68,11 @@ qq <- function(pvals, facet = NULL, colour = NULL, group = NULL, nrow=NULL, thin
 		pl <- ggplot(dt, aes(y=mlp, x=null_mlp, ymin=null_min, ymax=null_max))
 	}
 	
+	lims <- c(0, max(c(dt$mlp, dt$null_mlp), na.rm = TRUE)*1.05)
+	
 	if( ribbon ) pl <- pl %+% geom_ribbon(colour=NA, alpha = ribbon.alpha)
 
-	pl <- pl %+% geom_abline(slope = 1, intercept = 0, colour = abline.colour) %+% geom_point(size = point.size, alpha = point.alpha) %+% ylab(expression("Observed"~-log[10](p-value))) %+% xlab(expression("Expected"~-log[10](p-value)))
+	pl <- pl %+% geom_abline(slope = 1, intercept = 0, colour = abline.colour) %+% geom_point(size = point.size, alpha = point.alpha) %+% ylab(expression("Observed"~-log[10](p-value))) %+% xlab(expression("Expected"~-log[10](p-value))) %+% coord_cartesian(ylim = lims, xlim = lims, expand = FALSE)
 	
 	if( !is.null(theme.objects) ) pl <- pl %+% theme.objects
 	
