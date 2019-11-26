@@ -62,18 +62,19 @@ qq <- function(pvals, facet = NULL, colour = NULL, group = NULL, nrow=NULL, thin
 		dt <- data.table(pvals,facet,group)[,getDT(pvals,facet[1]),by=list(facet,group)]
 		pl <- ggplot(dt, aes(y=mlp, ymin=null_min, ymax=null_max, x=null_mlp, colour=fc_group)) + facet_wrap(~fc_group,nrow=nrow)
 	}else if( !is.null(colour)){
-		dt <- data.table('pvals'=pvals,'colour'=colour,'group'=group)[,getDT(pvals,colour[1]),by=list(group,colour)]
-		pl <- ggplot(dt, aes(y=mlp, ymin=null_min, ymax=null_max, x=null_mlp, colour=colour)) + guides(colour = guide_legend(title = legend.title))
+		dt <- data.table('pvals'=pvals,'colour'=colour,'group'=group)[,getDT(pvals,colour),by=list(group)]
+		pl <- ggplot(dt, aes(y=mlp, ymin=null_min, ymax=null_max, x=null_mlp, colour=fc_group)) + guides(colour = guide_legend(title = legend.title))
 	}else{
 		dt <- data.table(pvals,group)[,getDT(pvals),by=list(group)]
 		pl <- ggplot(dt, aes(y=mlp, x=null_mlp, ymin=null_min, ymax=null_max))
 	}
 	
-	lims <- c(0, max(c(dt$mlp, dt$null_mlp), na.rm = TRUE)*1.05)
+	x_lims <- c(0, max(c(dt$null_mlp), na.rm = TRUE)*1.02)
+	y_lims <- c(0, max(c(dt$mlp, dt$null_mlp), na.rm = TRUE)*1.02)
 	
 	if( ribbon ) pl <- pl %+% geom_ribbon(colour=NA, alpha = ribbon.alpha)
 
-	pl <- pl %+% geom_abline(slope = 1, intercept = 0, colour = abline.colour) %+% geom_point(size = point.size, alpha = point.alpha) %+% ylab(expression("Observed"~-log[10]*'('*italic(p)*'-value)')) %+% xlab(expression("Expected"~-log[10]*'('*italic(p)*'-value)')) %+% coord_cartesian(ylim = lims, xlim = lims, expand = FALSE)
+	pl <- pl %+% geom_abline(slope = 1, intercept = 0, colour = abline.colour) %+% geom_point(size = point.size, alpha = point.alpha) %+% ylab(expression("Observed"~-log[10]*'('*italic(p)*'-value)')) %+% xlab(expression("Expected"~-log[10]*'('*italic(p)*'-value)')) %+% coord_cartesian(ylim = y_lims, xlim = x_lims, expand = FALSE)
 	
 	if( !is.null(theme.objects) ) pl <- pl %+% theme.objects
 	
@@ -81,4 +82,6 @@ qq <- function(pvals, facet = NULL, colour = NULL, group = NULL, nrow=NULL, thin
 	
 	invisible(list('plot' = pl, 'data' = dt))
 }
+
+
 
