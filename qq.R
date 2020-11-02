@@ -3,7 +3,7 @@
 # A simple script for qqplots using ggplot2
 # contact: qcorbin@hsph.harvard.edu
 
-qq <- function(pvals, facet = NULL, colour = NULL, group = NULL, nrow=NULL, thin_qt = 0.01, n_pts = 5000, ribbon = TRUE, confidence_level = 0.05, point.alpha = 1, point.size = 0.7, ribbon.alpha = 0.25, abline.colour = 'red', legend.title = NULL, theme.objects = NULL, print_plot = TRUE ){
+qq <- function(pvals, facet = NULL, colour = NULL, group = NULL, nrow=NULL, thin_qt = 0.01, n_digits = 2, n_pts = NA, ribbon = TRUE, confidence_level = 0.05, point.alpha = 1, point.size = 0.7, ribbon.alpha = 0.25, abline.colour = 'red', legend.title = NULL, theme.objects = NULL, print_plot = TRUE ){
 
 	# REQUIRED ARGUMENTS
 	# pvals = length(N) vector of p-values (or -log10(p-values))
@@ -44,16 +44,21 @@ qq <- function(pvals, facet = NULL, colour = NULL, group = NULL, nrow=NULL, thin
 		null_mlp <- (-1)*log10((1:n)/(n+1))
 		null_min <- (-1)*log10( qbeta( conf_alpha/2, 1:n, n +1 - 1:n) )
 		null_max <- (-1)*log10( qbeta( 1- conf_alpha/2, 1:n, n +1 - 1:n) )
-		if( n*( 1 - thin_qt ) > 1.25*n_pts ){
-			kp_0 <- ceiling(n*thin_qt)
-			kp <- sort(c(
-				1:(kp_0-1),
-				sample( kp_0:n, n_pts, prob = 1 + mlp[kp_0:n] )
-			))
-		}else{
-			kp <- 1:n
+		if( !is.na(n_pts) ){
+			if( n*( 1 - thin_qt ) > 1.25*n_pts ){
+				kp_0 <- ceiling(n*thin_qt)
+				kp <- sort(c(
+					1:(kp_0-1),
+					sample( kp_0:n, n_pts, prob = 1 + mlp[kp_0:n] )
+				))
+			}else{
+				kp <- 1:n
+			}
+			data.table('mlp'=mlp,'null_mlp'=null_mlp, 'null_min'=null_min, 'null_max'=null_max,'fc_group' = group_label)[kp,]
+		}else if( !is.na(n_digits) ){
+			rd <- function(x) round(x, n_digits)
+			unique(data.table('mlp'=rd(mlp),'null_mlp'=rd(null_mlp), 'null_min'=rd(null_min), 'null_max'=rd(null_max),'fc_group' = group_label))
 		}
-		data.table('mlp'=mlp,'null_mlp'=null_mlp, 'null_min'=null_min, 'null_max'=null_max,'fc_group' = group_label)[kp,]
 	}
 
 	if( is.null(group) ) group <- 1
