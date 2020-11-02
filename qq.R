@@ -33,6 +33,9 @@ qq <- function(pvals, facet = NULL, colour = NULL, group = NULL, nrow=NULL, thin
 	require(ggplot2)
 
 	`+.gg` <- `%+%`
+	
+	# fractional rounding to reduce number of unique points
+	round_frac <- function(x, n, const = 10^n) round(x*const)/const
 
 	getDT <- function(p, group_label = '', conf_alpha = confidence_level ){
 		n <- length(p)
@@ -44,7 +47,7 @@ qq <- function(pvals, facet = NULL, colour = NULL, group = NULL, nrow=NULL, thin
 		null_mlp <- (-1)*log10((1:n)/(n+1))
 		null_min <- (-1)*log10( qbeta( conf_alpha/2, 1:n, n +1 - 1:n) )
 		null_max <- (-1)*log10( qbeta( 1- conf_alpha/2, 1:n, n +1 - 1:n) )
-		if( !is.na(n_pts) ){
+		if( !is.na(n_pts) & is.na(n_digits) ){
 			if( n*( 1 - thin_qt ) > 1.25*n_pts ){
 				kp_0 <- ceiling(n*thin_qt)
 				kp <- sort(c(
@@ -56,7 +59,7 @@ qq <- function(pvals, facet = NULL, colour = NULL, group = NULL, nrow=NULL, thin
 			}
 			data.table('mlp'=mlp,'null_mlp'=null_mlp, 'null_min'=null_min, 'null_max'=null_max,'fc_group' = group_label)[kp,]
 		}else if( !is.na(n_digits) ){
-			rd <- function(x) round(x, n_digits)
+			rd <- function(x) round_frac(x, n_digits)
 			unique(data.table('mlp'=rd(mlp),'null_mlp'=rd(null_mlp), 'null_min'=rd(null_min), 'null_max'=rd(null_max),'fc_group' = group_label))
 		}
 	}
