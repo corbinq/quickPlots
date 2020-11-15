@@ -3,10 +3,13 @@
 # A simple script for qqplots using ggplot2
 # contact: qcorbin@hsph.harvard.edu
 
-qq <- function(pvals, facet = NULL, colour = NULL, group = NULL, nrow=NULL, thin_qt = 0.01, n_digits = 2, n_pts = NA, ribbon = TRUE, confidence_level = 0.05, point.alpha = 1, point.size = 0.7, ribbon.alpha = 0.25, abline.colour = 'red', legend.title = NULL, theme.objects = NULL, print_plot = TRUE ){
+qq <- function(pvals, n_pvals = rep(1, length(pvals)), facet = NULL, colour = NULL, group = NULL, nrow=NULL, thin_qt = 0.01, n_digits = 2, n_pts = NA, ribbon = TRUE, confidence_level = 0.05, point.alpha = 1, point.size = 0.7, ribbon.alpha = 0.25, abline.colour = 'red', legend.title = NULL, theme.objects = NULL, print_plot = TRUE ){
 
 	# REQUIRED ARGUMENTS
 	# pvals = length(N) vector of p-values (or -log10(p-values))
+	
+	# Optional:
+	# n_pvals = length(N) vector giving number of observations for each unique p-value
 	
 	# GROUPING AND FACETING ARGUMENTS
 	# facet = length(N) facetting variable 
@@ -37,16 +40,21 @@ qq <- function(pvals, facet = NULL, colour = NULL, group = NULL, nrow=NULL, thin
 	# fractional rounding to reduce number of unique points
 	round_frac <- function(x, n, const = 10^n) round(x*const)/const
 
-	getDT <- function(p, group_label = '', conf_alpha = confidence_level ){
+	getDT <- function(p, N, group_label = '', conf_alpha = confidence_level ){
+		require(data.table)
 		n <- length(p)
 		if( max(pvals) > 1 ){
 			cat('\nAssuming input is -log10(p-value)\n')
 			p <- 0.1^p
 		}
-		mlp <- (-1)*log10(sort(p))
-		null_mlp <- (-1)*log10((1:n)/(n+1))
-		null_min <- (-1)*log10( qbeta( conf_alpha/2, 1:n, n +1 - 1:n) )
-		null_max <- (-1)*log10( qbeta( 1- conf_alpha/2, 1:n, n +1 - 1:n) )
+		ORD <- order(p)
+		N <- N[ORD]
+		Seq_N <- cumsum(N)
+		N_t <- sum(N) + 1
+		mlp <- (-1)*log10(p[ORD])
+		null_mlp <- (-1)*log10(Seq_N/N_t)
+		null_min <- (-1)*log10( qbeta( conf_alpha/2, Seq_N, N_t - Seq_N) )
+		null_max <- (-1)*log10( qbeta( 1- conf_alpha/2, Seq_N, N_t - Seq_N) )
 		if( !is.na(n_pts) & is.na(n_digits) ){
 			if( n*( 1 - thin_qt ) > 1.25*n_pts ){
 				kp_0 <- ceiling(n*thin_qt)
@@ -67,13 +75,13 @@ qq <- function(pvals, facet = NULL, colour = NULL, group = NULL, nrow=NULL, thin
 	if( is.null(group) ) group <- 1
 
 	if( !is.null(facet) ){
-		dt <- data.table(pvals,facet,group)[,getDT(pvals,facet[1]),by=list(facet,group)]
+		dt <- data.table(pvals,n_pvals,facet,group)[,getDT(pvals,n_pvals,facet[1]),by=list(facet,group)]
 		pl <- ggplot(dt, aes(y=mlp, ymin=null_min, ymax=null_max, x=null_mlp, colour=fc_group)) + facet_wrap(~fc_group,nrow=nrow)
 	}else if( !is.null(colour)){
-		dt <- data.table('pvals'=pvals,'colour'=colour,'group'=group)[,getDT(pvals,colour),by=list(group)]
+		dt <- data.table('pvals'=pvals,'n_pvals'=n_pvals,'colour'=colour,'group'=group)[,getDT(pvals,n_pvals,colour),by=list(group)]
 		pl <- ggplot(dt, aes(y=mlp, ymin=null_min, ymax=null_max, x=null_mlp, colour=fc_group)) + guides(colour = guide_legend(title = legend.title))
 	}else{
-		dt <- data.table(pvals,group)[,getDT(pvals),by=list(group)]
+		dt <- data.table(pvals,n_pvals,group)[,getDT(pvals,n_pvals),by=list(group)]
 		pl <- ggplot(dt, aes(y=mlp, x=null_mlp, ymin=null_min, ymax=null_max))
 	}
 	
